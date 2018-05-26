@@ -26,24 +26,9 @@ bool read_point(ifstream *file, Point *p)
 	return true;
 }
 
-//计算k和last_cp_dim
-void compute_number_of_hash_functions(int_fast32_t *last_cp_dim, int_fast32_t *k)
-{
-	int_fast32_t rotation_dim = Math::find_next_power_of_two(1024);
-	int_fast32_t bits_per_cp = Math::log2ceil(rotation_dim) + 1;
-	*k = NUM_HASH_BITS / bits_per_cp;
-	if (*k * bits_per_cp < NUM_HASH_BITS) {
-		int_fast32_t remaining_bits = NUM_HASH_BITS - *k * bits_per_cp;
-		*k += 1;
-		*last_cp_dim = 1 << (remaining_bits - 1);
-	}
-	else {
-		*last_cp_dim = rotation_dim;
-	}
-}
 
 
-void rocessData() //处理数据集的向量,让它们分配到每个桶里去
+void processData() //处理数据集的向量,让它们分配到每个桶里去
 {
 	ifstream file;
 	file.open(DATA_FILE_NAME, ios::binary);
