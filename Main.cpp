@@ -8,6 +8,7 @@ using namespace std;
 const string DATA_FILE_NAME = ""; //数据集
 const string QUERY_FILE_NAME = ""; //查询集
 
+const int LOG_DIM = 10;
 const int NUM_HASH_TABLES = 50; //哈希表个数
 const int NUM_HASH_BITS = 18; //初始k值
 const ifstream files[2048]; //2048个输出流
@@ -31,6 +32,13 @@ void init()
 	}
 }
 int main() {
-	
+	float test[1024];
+	for(int i=0;i<1024;i++)
+		test[i]=1.0*i;
+	StaticTable::random_rotate(test, LOG_DIM);
+	cout << test[0] <<endl; 
+	cout << test[1] <<endl; 
+	cout << test[2] <<endl;
+	cout << test[3] <<endl;
 
 }
