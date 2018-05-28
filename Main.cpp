@@ -78,5 +78,5 @@ void init()
 int main() {
 	init();
 	processData();
-
+	return 0;
 }
