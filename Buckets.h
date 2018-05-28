@@ -68,7 +68,7 @@ public:
 		return true;
 	};
 	//Ð´Êý¾ÝÈëÍ°
-	void writePoint(Point *p,std::ofstream *file) {
+	static void writePoint(Point *p,std::ofstream *file) {
 		file->write((char*)&(p->id), sizeof(p->id));
 		file->write((char*)&(p->value), sizeof(p->value));
 	};

@@ -16,6 +16,7 @@ public:
 				max = i;
 			}
 		}
+		return max;
 	}
 
 };
