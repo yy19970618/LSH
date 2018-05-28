@@ -3,11 +3,9 @@
 #include <iostream>
 #include <tuple>  
 #include <stdlib.h>
-<<<<<<< HEAD
 #include "./ffht/fht_header_only.h"
-=======
-#include "../include/ffht/fht_header_only.h"
->>>>>>> temp
+
+
 
 #define SEED 4057218
 #define DIMENSION 1024
