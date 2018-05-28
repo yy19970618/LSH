@@ -19,7 +19,7 @@ public:
 		int minindex = 0;
 		for (int i = 1; i < size; i++)
 		{
-			float temp = countDistance(array[i],p);
+			float temp = countDistance(array[i],p,min);
 			if (min > temp&&temp!=-1)
 			{
 				min = temp; minindex = array[i]->id;
@@ -66,7 +66,12 @@ public:
 			p->value[i] = a;
 		}
 		return true;
-	}
+	};
+	//写数据入桶
+	void writePoint(Point *p,std::ofstream *file) {
+		file->write((char*)&(p->id), sizeof(p->id));
+		file->write((char*)&(p->value), sizeof(p->value));
+	};
 private:
 	std::vector<Point*> array;//桶的数据集
 	int size;//桶中数据点个数

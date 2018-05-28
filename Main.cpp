@@ -1,5 +1,6 @@
 #include "Buckets.h"
 #include "Math.h"
+#include "hash_helpers.h"
 #include <fstream>
 #include <iostream>
 
@@ -19,6 +20,7 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 	file->open(DATA_FILE_NAME, ios::binary);
 	Point *p;
 	Buckets::read_point(file, p);
+	int bucket = hash_helpers::findMax(p->value);
 
 }
 void init()
