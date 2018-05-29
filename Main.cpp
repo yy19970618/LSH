@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const string DATA_FILE_NAME = "d:/1/1/1.binary"; //数据集
+const string DATA_FILE_NAME = "d:/1/1/2.binary"; //数据集
 const string BUCKETS_FILES = "d:/1/buckets/"; //存放桶文件
 const string QUERY_FILE_NAME = "d:/1/1/2.binary"; //查询集
 
@@ -40,12 +40,12 @@ void queryData()
 		for (int i = 0; i < 1024; i++) {
 			vector[i] = p.value[i];
 		}
-		StaticTable::random_rotate(vector, LOG_DIM);
+		//StaticTable::random_rotate(vector, LOG_DIM);
 		bucket = hash_helpers::findMax(vector);
 		if (p.value[bucket] < 0)
 			bucket = bucket + 1024;
 		bucket++;
-		filename = "D:\\1\\buckets\\" + to_string(bucket) + ".binary";
+		filename = BUCKETS_FILES + to_string(bucket) + ".binary";
 		bucketfile.open(filename, ios::binary);
 		result[i]=querybucket[bucket].findMIn(&p, &bucketfile);
 		cout << "查询第" << i << "个向量中";
@@ -58,21 +58,36 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 	ifstream *file = new ifstream();
 	ofstream ofile;
 	file->open(DATA_FILE_NAME, ios::binary);
+	if (file->is_open() == false) {
+		cout << "dataset out!"; return;
+	}
+	/*ofstream ofile[2048];
+	for (int i = 1; i <= 2048; i++) {
+		string temp = BUCKETS_FILES + to_string(i) + ".binary";
+		cout << i << endl;
+		ofile[i-1].open(temp, ios::binary | ios::app);
+		if (ofile[i - 1].is_open() == false) {
+			cout << "file out!"; return;
+		}
+	}*/
+	
 	Point p ;
 	string filename;
 	int bucket,i=0;
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
-	cout << "开始处理时间：" << ltm->tm_hour<<":" <<ltm->tm_min<<":"<< ltm->tm_sec << endl;
+	int hour = ltm->tm_hour;
+	int min = ltm->tm_min;
+	int sec = ltm->tm_sec;
 	while (true)
 	{
 		if (file->peek() == EOF)
 		{
 			file->close();
-			ofile.close();
 			time_t now1 = time(0);
 			tm *ltm1 = localtime(&now1);
-			cout << "结束处理时间：" << ltm1->tm_hour << ":" << ltm1->tm_min << ":" << ltm1->tm_sec << endl;
+			cout << "start time:" << hour << min << sec;
+			cout << "end time:" << ltm1->tm_hour << ":" << ltm1->tm_min << ":" << ltm1->tm_sec << endl;
 			return;
 		}
 		Buckets::read_point(file, &p);
@@ -85,13 +100,13 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		if (p.value[bucket] < 0)
 			bucket = bucket + 1024;
 		bucket++;
-		filename = "D:\\1\\buckets\\" + to_string(bucket) + ".binary";
-		ofile.open(filename, ios::binary);
+		filename = BUCKETS_FILES + to_string(bucket) + ".binary";
+		ofile.open(filename, ios::binary | ios::app);
 		Buckets::writePoint(&p, &ofile);
-		cout << "处理第" << i << "个向量中";
+		ofile.close();
+		cout << p.id << endl;
 		i++;
 	}
-
 }
 //建立输出桶文件
 void init()

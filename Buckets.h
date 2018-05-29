@@ -47,9 +47,9 @@ public:
 		return count;
 	}
 	void readBucket(std::ifstream *file) {
-		Point *p;
-		while (read_point(file, p))
-			array.push_back(p);
+		Point p;
+		while (read_point(file, &p))
+			array.push_back(&p);
 		size = array.size();
 	};
 	//读点
@@ -72,6 +72,11 @@ public:
 		file->write((char*)&(p->id), sizeof(p->id));
 		file->write((char*)&(p->value), sizeof(p->value));
 	};
+	void freeArray()
+	{
+		for (int i = 0; i < size; i++)
+			free(array[i]);
+	}
 private:
 	std::vector<Point*> array;//桶的数据集
 	int size;//桶中数据点个数
