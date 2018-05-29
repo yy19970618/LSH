@@ -91,6 +91,7 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 			return;
 		}
 		Buckets::read_point(file, &p);
+		hash_helpers::pointUnit(&p);
 		float vector[1024];
 		for (int i = 0; i < 1024; i++) {
 			vector[i] = p.value[i];
