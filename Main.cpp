@@ -43,7 +43,7 @@ void queryData()
 			vector[i] = p.value[i];
 		}
 		//StaticTable::random_rotate(vector, LOG_DIM);
-		bucket = hash_helpers::findMax(vector);
+		bucket = hash_helpers::findMax(vector,1024);
 		if (p.value[bucket] < 0)
 			bucket = bucket + 1024;
 		bucket++;
@@ -74,7 +74,6 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 	}*/
 	
 	Point p ;
-	string filename;
 	int bucket,i=0;
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
@@ -88,7 +87,7 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 			file->close();
 			time_t now1 = time(0);
 			tm *ltm1 = localtime(&now1);
-			cout << "start time:" << hour << min << sec;
+			cout << "start time:" << ":" << hour << ":" << min << ":" << sec<<endl;
 			cout << "end time:" << ltm1->tm_hour << ":" << ltm1->tm_min << ":" << ltm1->tm_sec << endl;
 			return;
 		}
@@ -98,9 +97,16 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		for (int i = 0; i < 1024; i++) {
 			vector[i] = p.value[i];
 		}
-		int* bucket = StaticTable::random_rotate(vector, LOG_DIM,k,d);
-		
-		//filename = BUCKETS_FILES + to_string(bucket) + ".binary";
+		int bucket[k];
+		StaticTable::random_rotate(vector, LOG_DIM,k,d,bucket);
+		string filename = BUCKETS_FILES;
+		char buffer[20];
+		for (int i = 0; i < k; i++)
+		{
+			sprintf_s(buffer, "%05d", bucket[i]);
+			filename = filename + buffer;
+		}
+		filename = filename + ".binary";
 		ofile.open(filename, ios::binary | ios::app);
 		Buckets::writePoint(&p, &ofile);
 		ofile.close();
@@ -108,19 +114,9 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		i++;
 	}
 }
-//建立输出桶文件
-void init()
-{
-	for (int n=1; n<=2048; n++)
-	{
-		string filename = BUCKETS_FILES + to_string(n) + ".binary";
-		cout << filename << endl;//用于显示filename，方便查看结果  
-		ofstream file(filename);//声明一个输出流，并打开一个文件  
-	}
-	
-}
+
 int main() {
-	init();
+	
 	processData();
 	return 0;
 }
