@@ -26,20 +26,29 @@ private:
 	
 
 public:
-	static void random_rotate(float* vector, int log_n);
+	static int* random_rotate(float* vector, int log_n, int k, int d);
 
 };
 
-void StaticTable::random_rotate(float* vector, int log_n) {
+int* StaticTable::random_rotate(float* p, int log_n,int k,int d) {
 	srand(SEED);
 	//三次变换
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < DIMENSION; j++) {
-			if (rand() % 2 == 0)
-				vector[j] *= -1;
+	int *ret = new int[k];
+	for (int j = 0; j < k; j++) {  //k个哈希函数
+		float vector[1024];
+		for (int i = 0; i < 1024; i++) {
+			vector[i] = p[i];
 		}
-		fht_float(vector, log_n);
+		for (int i = 0; i < 3; i++) { //三次变换
+			for (int j = 0; j < DIMENSION; j++) {
+				if (rand() % 2 == 0)
+					vector[j] *= -1;
+			}
+			fht_float(vector, log_n);
+		}
+		ret[j] = hash_helpers::findMax(vector,d);  //映射到区域
 	}
+	return ret;
 }
 
 #pragma once

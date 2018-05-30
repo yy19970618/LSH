@@ -3,20 +3,23 @@
 #include<ostream>
 #include<math.h>
 
+
 class hash_helpers{
 public:
 	//找到p中绝对值最大的分量下标
-	static int findMax(float *p)
+	static int findMax(float *p,int d)
 	{
 		int max = 0;
-		for (int i = 1; i < 1024; i++)
+		for (int i = 1; i < d; i++)
 		{
 			if (abs(*(p+i)) > abs(*(p+max)))
 			{
 				max = i;
 			}
 		}
-		return max;
+		if (*(p + max) < 0)
+			max += d;
+		return ++max;
 	}
 	//将向量p单位化
 	static void pointUnit(Point* p) {

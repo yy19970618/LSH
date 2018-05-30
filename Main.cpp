@@ -16,6 +16,8 @@ int result[100];//结果集，返回id集
 const int LOG_DIM = 10;
 const int NUM_HASH_TABLES = 50; //哈希表个数
 const int NUM_HASH_BITS = 18; //初始k值
+const int k = 5;  //哈希函数个数
+const int d = 3;  //一个哈希函数区域
 
 //查询
 void queryData() 
@@ -96,12 +98,9 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		for (int i = 0; i < 1024; i++) {
 			vector[i] = p.value[i];
 		}
-		StaticTable::random_rotate(vector, LOG_DIM);
-		bucket = hash_helpers::findMax(vector);
-		if (p.value[bucket] < 0)
-			bucket = bucket + 1024;
-		bucket++;
-		filename = BUCKETS_FILES + to_string(bucket) + ".binary";
+		int* bucket = StaticTable::random_rotate(vector, LOG_DIM,k,d);
+		
+		//filename = BUCKETS_FILES + to_string(bucket) + ".binary";
 		ofile.open(filename, ios::binary | ios::app);
 		Buckets::writePoint(&p, &ofile);
 		ofile.close();
