@@ -22,16 +22,16 @@ public:
 		return ++max;
 	}
 	//将向量p单位化
-	static void pointUnit(Point* p) {
+	static void pointUnit(float *p) {
 		float count = 0;
 		for (int i = 0; i < 1024; i++)
 		{
-			count = p->value[i] * p->value[i] + count;
+			count = (*(p+i)) * (*(p+i)) + count;
 		}
 		count = sqrt(count);
 		for (int i = 0; i < 1024; i++)
 		{
-			p->value[i] = p->value[i] / count;
+			*(p+i) = *(p+i) / count;
 		}
 	}
 
