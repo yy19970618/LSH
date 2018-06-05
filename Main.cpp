@@ -8,8 +8,8 @@
 
 using namespace std;
 
-const string DATA_FILE_NAME = "/media/sunny/source/1/1/1.binary"; //数据集
-const string BUCKETS_FILES = "/media/sunny/source/1/buckets/"; //存放桶文件
+const string DATA_FILE_NAME = "d:/1/1/1.binary"; //数据集
+const string BUCKETS_FILES = "d:/1/1/buckets.binary"; //存放桶文件
 const string QUERY_FILE_NAME = "/media/sunny/source/1/1/2.binary"; //查询集
 //g++ -I ~/home/LSH/include -std=c++11 Main.cpp -g -o main
 const string CENTER_FILE_NAME = "/media/sunny/source/1/1/center.binary";//中心化数据集
@@ -61,10 +61,14 @@ void queryData()
 void processData() //处理数据集的向量,让它们分配到每个桶里去
 {
 	ifstream *file = new ifstream();
-	ofstream ofile;
+	fstream ofile;
 	file->open(DATA_FILE_NAME, ios::binary);
 	if (file->is_open() == false) {
 		cout << "dataset out!"; return;
+	}
+	ofile.open(BUCKETS_FILES);
+	if (ofile.is_open() == false) {
+		cout << "bucketsfile out!"; return;
 	}
 	ifstream cenfile;
 	cenfile.open(CENTER_FILE_NAME, ios::binary);
@@ -81,7 +85,6 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 	}*/
 	
 	Point p ;
-	int bucket;
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
 	int hour = ltm->tm_hour;
@@ -92,6 +95,7 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		if (file->peek() == EOF)
 		{
 			file->close();
+			ofile.close();
 			time_t now1 = time(0);
 			tm *ltm1 = localtime(&now1);
 			cout << "start time:" << ":" << hour << ":" << min << ":" << sec<<endl;
@@ -125,21 +129,30 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		cout<<endl;*/
 
 		int bucket[k];
+		bucket[0] = 1; bucket[1] = 2;
 		StaticTable::random_rotate(vector, LOG_DIM,k,d,bucket);
-
-		string filename = BUCKETS_FILES;
-		char buffer[20];
-		for (int i = 0; i < k; i++)
-		{
-			sprintf(buffer, "%04d", bucket[i]);
-			filename = filename + buffer;
-		}
-		filename = filename + ".binary";
-		ofile.open(filename, ios::binary | ios::app);
-		Buckets::writePoint(&p, &ofile);
-		ofile.close();
+		int64_t numByte = (bucket[0] - 1) * 1024 * (4 * 1025 + 8) + (bucket[1]-1) * (4 * 1025 + 8);
+		Buckets::writePoint(&p, &ofile,numByte);
 		cout << p.id << endl;
 	}
+}
+void initBucketFile() {
+	ofstream ofile;
+	ofile.open("d:/1/1/buckets.binary", ios::binary);
+	if (ofile.is_open() == false)
+		return;
+
+	for (int i = 0; i < 1024; i++)
+	{
+		for (int j = 0; j < 1024; j++)
+		{
+			int64_t temp = i * 1024 * (4 * 1025 + 8) + j*(4 * 1025 + 8);
+			ofile.seekp(temp);
+			temp = 0;
+			ofile.write((char*)&(temp), sizeof(temp));
+		}
+	}
+	ofile.close();
 }
 void countCenter() {
 	ifstream *file = new ifstream();
@@ -176,8 +189,19 @@ void countCenter() {
 	cenfile.close();
 }
 int main() {
+	fstream file;
+	file.open("d:/1/1/buckets.binary");
+	file.seekg(4116);
+	int64_t a;
+	file.read((char*)&a, sizeof(a));
+	a++;
+	file.seekg(4116);
+	cout << file.tellg();
+	file.write((char*)&a, sizeof(a));
+	cout << file.tellg();
+	//initBucketFile();
 	//countCenter();
 	//processData();
-
+	
 	return 0;
 }

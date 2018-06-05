@@ -68,9 +68,41 @@ public:
 		return true;
 	};
 	//写数据入桶
-	static void writePoint(Point *p,std::ofstream *file) {
-		file->write((char*)&(p->id), sizeof(p->id));
-		file->write((char*)&(p->value), sizeof(p->value));
+	static void writePoint(Point *p,std::fstream *file,int64_t numbyte) {
+		int64_t a;
+		file->seekp(numbyte);
+		while (true) {
+			file->read((char*)&a, sizeof(a));
+			if (a < 4) {
+				file->seekg(numbyte);
+				a++;
+				file->write((char*)&a, sizeof(a)); file->flush();
+				numbyte = numbyte + 8 + 1025 * (a-1);
+				file->seekg(numbyte);
+				file->write((char*)&(p->id), sizeof(p->id));
+				file->write((char*)&(p->value), sizeof(p->value)); file->flush();
+				return;
+			}
+			else if (a == 4) {
+				int64_t temp = file->tellg();
+				temp = temp - 8;//记录要改写a的位置
+				file->seekg(SEEK_END);
+				int64_t loc = file->tellg();//下一个字块开头的位置
+				file->seekg(temp); file->write((char*)&loc, sizeof(loc));
+				file->seekg(SEEK_END);
+				a = 0;file->write((char*)&a, sizeof(a)); file->flush();
+				file->write((char*)&(p->id), sizeof(p->id));
+				file->write((char*)&(p->value), sizeof(p->value)); file->flush();
+				float b = 0;
+				file->write((char*)&b, (sizeof(b)*1025)*3); file->flush();
+				return;
+				
+			}
+			else {
+				numbyte = a;
+				file->seekp(numbyte);
+			}
+		}
 	};
 	void freeArray()
 	{
