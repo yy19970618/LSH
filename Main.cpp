@@ -1,15 +1,22 @@
 #include "Buckets.h"
-#include "Math.h"
 #include "hash_helpers.h"
 #include "StaticTable.h"
 #include <ctime>
 #include <fstream>
 #include <iostream>
-
+#include<vector>
 using namespace std;
 
-const string DATA_FILE_NAME = "d:/1/1/1.binary"; //数据集
-const string BUCKETS_FILES = "d:/1/1/buckets.binary"; //存放桶文件
+/*const string DATA_FILE_NAME = "//mnt/hgfs/I/1/1.binary"; //数据集
+const string BUCKETS_FILES = "/home/summar/buckets.binary"; //存放桶文件
+const string QUERY_FILE_NAME = "/mnt/hgfs/I/1/2.binary"; //查询集
+//g++ -I ~/LSH/include -std=c++11 Main.cpp -g -o main
+const string CENTER_FILE_NAME = "/mnt/hgfs/I/1/center.binary";//中心化数据集*/
+
+const string DATA_FILE_NAME = "/media/sunny/source/1/1/sui.binary"; //数据集
+const string BUCKETS_FILES = "/media/sunny/source/1/1/buckets.binary"; //存放桶文件
+const string LI = "/media/sunny/source/1/1/3.csv"; //存放桶文件
+const string my = "/media/sunny/source/1/1/4.csv"; //存放桶文件
 const string QUERY_FILE_NAME = "/media/sunny/source/1/1/2.binary"; //查询集
 //g++ -I ~/home/LSH/include -std=c++11 Main.cpp -g -o main
 const string CENTER_FILE_NAME = "/media/sunny/source/1/1/center.binary";//中心化数据集
@@ -19,70 +26,144 @@ const int LOG_DIM = 10;
 const int NUM_HASH_TABLES = 50; //哈希表个数
 const int NUM_HASH_BITS = 18; //初始k值
 const int k = 2;  //哈希函数个数
-const int d = 1024;  //一个哈希函数区域
+const int d = 512;  //一个哈希函数区域
 float center[1024];
-
+vector<int32_t> hashindex[1048576];
 //查询
+void readIndex()
+{
+	fstream file;
+	file.open(BUCKETS_FILES, ios::binary);
+	int a,index=0;
+	while(true) {
+		if (file.peek() == EOF)
+		{
+			file.close();
+			return;
+		}
+		file.read((char*)&a, sizeof(a));
+		if (a == -1) 
+		{
+			index++; file.read((char*)&a, sizeof(a));
+		}
+		hashindex[index].push_back(a);
+	}
+}
 void queryData() 
 {
 	ifstream *file = new ifstream();
-	ifstream bucketfile;
 	file->open(QUERY_FILE_NAME, ios::binary);
+	if (file->is_open() == false)
+	{
+		cout << "querydata file fail!" << endl; return;
+	}
+	ifstream cenfile;//读中心点
+	cenfile.open(CENTER_FILE_NAME, ios::binary);
+	for (int i = 0; i<1024; i++)
+		cenfile.read((char*)&(center[i]), sizeof(center[i]));
+	ifstream ofile;
+	ofile.open(DATA_FILE_NAME, ios::binary);
+
+	ofstream quer;
+	quer.open(my);
+	readIndex();
 	Point p;
-	int i = 0,bucket;
-	Buckets querybucket[2048];
-	float vector[1024];
-	string filename;
+	int num=0;
+	time_t now = time(0);
+	tm *ltm = localtime(&now);
+	int hour = ltm->tm_hour;
+	int min = ltm->tm_min;
+	int sec = ltm->tm_sec;
 	while (true)
 	{
 		if (file->peek() == EOF)
 		{
 			file->close();
-			bucketfile.close();
+			time_t now1 = time(0);
+			tm *ltm1 = localtime(&now1);
+			cout << "start time:" << ":" << hour << ":" << min << ":" << sec << endl;
+			cout << "end time:" << ltm1->tm_hour << ":" << ltm1->tm_min << ":" << ltm1->tm_sec << endl;
+			cout<<"total num:"<<num<<endl;
 			return;
 		}
+		int bucket[4];
+		float tempvector[1024];
+		int64_t numByte[4];
+		vector<int32_t> queryarray;
 		Buckets::read_point(file, &p);
-		for (int i = 0; i < 1024; i++) {
-			vector[i] = p.value[i];
-		}
-		//StaticTable::random_rotate(vector, LOG_DIM);
-		bucket = hash_helpers::findMax(vector,1024);
-		if (p.value[bucket] < 0)
-			bucket = bucket + 1024;
-		bucket++;
-		filename = BUCKETS_FILES + to_string(bucket) + ".binary";
-		bucketfile.open(filename, ios::binary);
-		result[i]=querybucket[bucket].findMIn(&p, &bucketfile);
-		cout << "查询第" << i << "个向量中";
-		i++;
 
+		for (int i = 0; i < 1024; i++) {
+			tempvector[i] = p.value[i];
+		}
+
+		hash_helpers::pointUnit(tempvector);
+
+		for (int i = 0; i<1024; i++)
+			tempvector[i] = tempvector[i] - center[i];
+
+		StaticTable::random_rotate_query(tempvector, LOG_DIM, k, d, bucket);
+				
+		quer<<bucket[0]<<','<<bucket[1]<<','<<bucket[2]<<','<<bucket[3]<<endl;
+		/*numByte[0] = (bucket[0] - 1) * 1024 + (bucket[2] - 1);
+		numByte[1] = (bucket[0] - 1) * 1024 + (bucket[3] - 1);
+		numByte[2] = (bucket[1] - 1) * 1024 + (bucket[2] - 1);
+		numByte[3] = (bucket[1] - 1) * 1024 + (bucket[3] - 1);
+		
+		for (int i = 0; i < 4; i++)
+		{
+			cout << bucket[i] << " ";
+			for (int j = 0; j < hashindex[numByte[i]].size(); j++)
+			{
+				cout<<hashindex[numByte[i]][j]<<" ";
+				queryarray.push_back(hashindex[numByte[i]][j]);
+			}
+			cout<<endl;
+		}
+		//Buckets::findMIn(&p, &ofile, queryarray);
+		for(int i=0;i<queryarray.size();i++)
+		{
+			if(queryarray[i]==p.id)
+				{num++;break;}
+				
+		}*/
+		cout << p.id << endl;
+		//return;
 	}
+}
+void coutIndex() {
+	ofstream file;
+	file.open(LI);
+	int count=0;
+	for (int i = 0; i < 1048576; i++)
+	{
+		if(hashindex[i].size()==0) count++;
+		int j ;
+		for ( j = 0; j < hashindex[i].size(); j++)
+		{
+			//file.write((char*)&(hashindex[i][j]), sizeof(int32_t));
+			file<<hashindex[i][j]<<',';
+		}
+		//int a = -1; file.write((char*)&a, sizeof(a));
+		file<<endl;
+	}
+	cout<<"blank buckets num:"<<count<<endl;
 }
 void processData() //处理数据集的向量,让它们分配到每个桶里去
 {
 	ifstream *file = new ifstream();
-	fstream ofile;
+	//fstream ofile;
 	file->open(DATA_FILE_NAME, ios::binary);
 	if (file->is_open() == false) {
 		cout << "dataset out!"; return;
 	}
-	ofile.open(BUCKETS_FILES);
+	/*ofile.open(BUCKETS_FILES);
 	if (ofile.is_open() == false) {
 		cout << "bucketsfile out!"; return;
-	}
-	ifstream cenfile;
+	}*/
+	ifstream cenfile;//读中心点
 	cenfile.open(CENTER_FILE_NAME, ios::binary);
 	for(int i=0;i<1024;i++)
 		cenfile.read((char*)&(center[i]), sizeof(center[i]));
-	/*ofstream ofile[2048];
-	for (int i = 1; i <= 2048; i++) {
-		string temp = BUCKETS_FILES + to_string(i) + ".binary";
-		cout << i << endl;
-		ofile[i-1].open(temp, ios::binary | ios::app);
-		if (ofile[i - 1].is_open() == false) {
-			cout << "file out!"; return;
-		}
-	}*/
 	
 	Point p ;
 	time_t now = time(0);
@@ -95,14 +176,16 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		if (file->peek() == EOF)
 		{
 			file->close();
-			ofile.close();
+			//ofile.close();
 			time_t now1 = time(0);
 			tm *ltm1 = localtime(&now1);
 			cout << "start time:" << ":" << hour << ":" << min << ":" << sec<<endl;
 			cout << "end time:" << ltm1->tm_hour << ":" << ltm1->tm_min << ":" << ltm1->tm_sec << endl;
+			coutIndex();
 			return;
 		}
 		Buckets::read_point(file, &p);
+	
 		float vector[1024];
 		for (int i = 0; i < 1024; i++) {
 			vector[i] = p.value[i];
@@ -114,7 +197,7 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 		cout<<endl;*/
 
 		hash_helpers::pointUnit(vector);
-
+		
 		/*cout<<"b";
 		for(int i=0;i<1024;i++)
 			cout<<vector[i]<<" ";
@@ -122,23 +205,31 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 
 		for(int i=0;i<1024;i++)
 			vector[i]=vector[i]-center[i];
-
+		
 		/*cout<<"c";
 		for(int i=0;i<1024;i++)
 			cout<<vector[i]<<" ";
 		cout<<endl;*/
 
 		int bucket[k];
-		bucket[0] = 1; bucket[1] = 2;
+		
 		StaticTable::random_rotate(vector, LOG_DIM,k,d,bucket);
-		int64_t numByte = (bucket[0] - 1) * 1024 * (4 * 1025 + 8) + (bucket[1]-1) * (4 * 1025 + 8);
-		Buckets::writePoint(&p, &ofile,numByte);
+		
+		//int64_t numByte = (bucket[0] - 1) * 1024 * (4 * 4 + 8) + (bucket[1]-1) * (4 * 4 + 8);
+		//bucket[0] = 1; bucket[1] = 2;
+		int64_t numByte = (bucket[0] - 1) * 1024  + (bucket[1] - 1) ;
+		cout<<numByte<< " ";
+		//numByte=numByte/1024;
+		hashindex[numByte].push_back(p.id);
+		//Buckets::writePointIndex(p.id, &ofile,numByte);
 		cout << p.id << endl;
+		//if(p.id>6) return;
 	}
 }
+
 void initBucketFile() {
 	ofstream ofile;
-	ofile.open("d:/1/1/buckets.binary", ios::binary);
+	ofile.open(BUCKETS_FILES, ios::binary);
 	if (ofile.is_open() == false)
 		return;
 
@@ -146,12 +237,12 @@ void initBucketFile() {
 	{
 		for (int j = 0; j < 1024; j++)
 		{
-			int64_t temp = i * 1024 * (4 * 1025 + 8) + j*(4 * 1025 + 8);
-			ofile.seekp(temp);
+			int64_t temp;// = i * 1024 * (4 * 4 + 8) + j*(4 * 4 + 8);
 			temp = 0;
-			ofile.write((char*)&(temp), sizeof(temp));
+			ofile.write((char*)&(temp), 3*sizeof(temp));
 		}
 	}
+	
 	ofile.close();
 }
 void countCenter() {
@@ -178,7 +269,7 @@ void countCenter() {
 		}
 		cout << p.id << endl;
 	}
-	double num = 10000000;
+	double num = p.id+1;
 	for (int i = 0; i < 1024; i++) {
 		center[i] = count[i] / num;
 	}
@@ -189,19 +280,34 @@ void countCenter() {
 	cenfile.close();
 }
 int main() {
-	fstream file;
+
+	/*fstream file;
 	file.open("d:/1/1/buckets.binary");
-	file.seekg(4116);
+	file.seekg(16);
 	int64_t a;
 	file.read((char*)&a, sizeof(a));
 	a++;
 	file.seekg(4116);
 	cout << file.tellg();
 	file.write((char*)&a, sizeof(a));
-	cout << file.tellg();
+	cout << file.tellg();*/
+	//initBucketFile();
 	//initBucketFile();
 	//countCenter();
+	//coutIndex();
 	//processData();
-	
+	/*vector<float> www;
+	fstream file;
+	file.open("D:/1/1/3.binary");
+	if (file.is_open()) {
+		while (true) {
+			if (file.peek() == EOF) break;
+			float b;
+			file.read((char*)&b, sizeof(b));
+			www.push_back(b);
+		}
+	}*/
+	queryData() ;
 	return 0;
+
 }
