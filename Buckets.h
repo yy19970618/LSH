@@ -17,8 +17,8 @@ public:
 		for (int i = 0; i < idarray.size(); i++)
 		{
 			Point temp;
-			int32_t numbyte = (idarray[i] - 1) * 1025 * 4;
-			file->seekg(numbyte);
+			int64_t numbyte = (int64_t)(idarray[i]* 1025.0 * 4.0);
+			file->seekg(numbyte,std::ios::beg);
 			Buckets::read_point(file, &temp);
 			array.push_back(temp);
 		}
