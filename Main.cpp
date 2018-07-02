@@ -203,7 +203,7 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 			coutIndex();
 			return;
 		}
-		Buckets::read_point(file, &p);
+		Buckets::read_point(file, &p);//读点
 	
 		float vector[1024];
 		for (int i = 0; i < 1024; i++) {
@@ -215,14 +215,14 @@ void processData() //处理数据集的向量,让它们分配到每个桶里去
 			cout<<vector[i]<<" ";
 		cout<<endl;*/
 
-		hash_helpers::pointUnit(vector);
+		hash_helpers::pointUnit(vector);//单位化
 		
 		/*cout<<"b";
 		for(int i=0;i<1024;i++)
 			cout<<vector[i]<<" ";
 		cout<<endl;*/
 
-		for(int i=0;i<1024;i++)
+		for(int i=0;i<1024;i++)//中心化
 			vector[i]=vector[i]-center[i];
 		
 		/*cout<<"c";
@@ -298,7 +298,7 @@ void countCenter() {
 		cenfile.write((char*)&(center[i]), sizeof(center[i]));
 	cenfile.close();
 }
-int main() {
+int main1() {
 
 	/*fstream file;
 	file.open("d:/1/1/buckets.binary");
@@ -326,6 +326,8 @@ int main() {
 			www.push_back(b);
 		}
 	}*/
+	string stro = "p";
+	string str = "i"+stro;
 	queryData() ;
 	//readIndex();
 	return 0;
