@@ -23,7 +23,7 @@ public:
 			array.push_back(temp);
 		}
 		float min = countDistance(p, &array[0]);
-		int minindex = 0;
+		int minindex = array[0].id;
 		for (int i = 1; i < array.size(); i++)
 		{
 			float temp = countDistance(&array[i],p,min);
@@ -53,7 +53,18 @@ public:
 		}
 		return count;
 	}
-	
+	static float distance(std::ifstream *file,int index,Point p) {
+		float count = 0;
+		Point q;
+		int64_t numbyte = (int64_t)(index* 1025.0 * 4.0);
+		file->seekg(numbyte,std::ios::beg);
+		Buckets::read_point(file, &q);
+		for (int i = 0; i < 1024; i++)
+		{
+			count = count + (p.value[i] - q.value[i])*(p.value[i] - q.value[i]);
+		}
+		return count;
+	}
 	//¶Áµã
 	static bool read_point(std::ifstream *file, Point *p)
 	{

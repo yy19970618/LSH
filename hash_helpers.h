@@ -19,7 +19,7 @@ public:
 		}
 		if (*(p + max) < 0)
 			max += d;
-		return ++max;
+		return max;
 	}
 	static void findMax(float *p, int d, int *ret)
 	{
