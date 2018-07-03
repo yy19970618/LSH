@@ -100,12 +100,51 @@ void processData_stable()
 	ofile.close();
 	return;
 }
-void readIndex_stable()
+
+void queryData_stable()
 {
-	ifstream file;
-	file.open(INDEX_FILE_NEME);
+	ifstream *file = new ifstream();
+	file->open(QUERY_FILE_NAME, ios::binary);
+	if (file->is_open() == false)
+	{
+		cout << "querydata file fail!" << endl; return;
+	}
+	
+	ifstream data_file;
+	data_file.open(DATA_FILE_NAME, ios::binary);
+	if (data_file.is_open() == false)
+	{
+		cout << "dataset file fail!" << endl; return;
+	}
+	ifstream bucket_file;
+	bucket_file.open(INDEX_FILE_NEME);
+	if (bucket_file.is_open() == false)
+	{
+		cout << "bucket file fail!" << endl; return;
+	}
+	string linestr;
+
+	ofstream result;
+	result.open(RESULT_FILE_NAME);
+	if (result.is_open() == false)
+	{
+		cout << "bucket file fail!" << endl; return;
+	}
+	//加载桶和参数a,b
+	float a[NUM][N]; int b[NUM];
 	string linestr; int index = 0;
-	while (getline(file, linestr))
+	for (int i = 0; i < NUM; i++)
+	{
+		getline(bucket_file, linestr);
+		stringstream ss(linestr);
+		string str;
+		for (int j = 0; j < N; j++) {
+			getline(ss, str, ',');
+			a[i][j] = stoi(str);
+		}
+		b[i] = stoi(str);
+	}
+	while (getline(bucket_file, linestr))
 	{
 		stringstream ss(linestr);
 		string str;
@@ -113,8 +152,62 @@ void readIndex_stable()
 			hashindex_stable[index].push_back(stoi(str));
 		index++;
 	}
-}
+	Point p;
+	int num = 0;
+	/*time_t now = time(0);
+	tm *ltm = localtime(&now);
+	int hour = ltm->tm_hour;
+	int min = ltm->tm_min;
+	int sec = ltm->tm_sec;*/
+	while (true)
+	{
+		if (file->peek() == EOF)
+		{
+			file->close();
+			/*time_t now1 = time(0);
+			tm *ltm1 = localtime(&now1);
+			cout << "start time:" << ":" << hour << ":" << min << ":" << sec << endl;
+			cout << "end time:" << ltm1->tm_hour << ":" << ltm1->tm_min << ":" << ltm1->tm_sec << endl;*/
+			cout << "total num:" << num << endl;
+			return;
+		}
+		
+		Buckets::read_point(file, &p);
+		vector<int> queryarray;
+		int indexid = 0;
+		for (int i = 0; i < NUM; i++)
+		{
+			int temp = countHash(a[i], &b[i], p.value);
+			indexid = indexid + temp*pow(10, i);
+		}
+		cout << p.id << endl;
+		
+			//cout << bucket[i] << " ";
+			for (int j = 0; j < hashindex_stable[indexid].size(); j++)
+			{
+				//cout << hashindex[cnt][numByte[i]][j] << " ";
+				queryarray.push_back(hashindex_stable[indexid][j]);
+			}
+	
+		int ret = Buckets::findMIn(&p, &ofile, queryarray);
+		result << ret << endl;
+		float tmp = Buckets::distance(&ofile, ret, p);
+		cout << "find id:" << ret << " distance:" << tmp << endl;
+		for (int i = 0; i<queryarray.size(); i++)
+		{
+			if (queryarray[i] == p.id)
+			{
+				num++; break;
+			}
 
+		}
+		tmp = Buckets::distance(&ofile, p.id, p);
+		cout << "actual id:" << p.id << " distance:" << tmp << endl;
+		//return;
+
+	}
+
+}
 
 int main()
 {
