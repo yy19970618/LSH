@@ -2,6 +2,21 @@
 #include "Buckets.h"
 #include<ostream>
 #include<math.h>
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+struct Cmp {
+	int index;
+	float val;
+	Cmp(int index,float val):index(index),val(val){}
+};
+
+bool compare(Cmp &cmp1, Cmp &cmp2) {
+	if (abs(cmp1.val) > abs(cmp2.val))
+		return true;
+	return false;
+}
 
 
 class hash_helpers{
@@ -39,6 +54,21 @@ public:
 		if (*(p + nextmax) < 0)
 			nextmax += d;
 		ret[0] = max; ret[1] = nextmax;
+	}
+	static void findMax(float *p, int d,int cnt, int *ret) {
+		std::vector<Cmp> tmp;
+		for (int i = 0; i < d; i++) {
+			tmp.push_back(Cmp(i, *(p + i)));
+		}
+		std::sort(tmp.begin(), tmp.end(), compare);
+		for (int i = 0; i < cnt; i++) {
+			if (tmp[i].val < 0) {
+				ret[i] = tmp[i].index + d;
+			}
+			else
+				ret[i] = tmp[i].index;
+		}
+
 	}
 	//将向量p单位化
 	static void pointUnit(float *p) {

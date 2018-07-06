@@ -5,15 +5,16 @@
 #include<math.h>
 #include"Buckets.h"
 #include<sstream>
+#include<random>
 
 using namespace std;
 const int R = 10;
 const int N = 1024;//维度
-const int NUM = 6;
-const string DATA_FILE_NAME = "d:/1/1/sui.binary"; //数据集
-const string QUERY_FILE_NAME = "d:/1/1/2.binary"; //查询集
-const string RESULT_FILE_NAME = "d:/1/1/result.csv"; //查询集
-const string INDEX_FILE_NEME = "d:/1/1/stable.csv";
+const int NUM = 2;
+const string DATA_FILE_NAME = "/media/young/LENOVO/666/mysource/cnsoft/base_vectors1.fea"; //数据集
+const string QUERY_FILE_NAME = "/media/young/LENOVO/666/mysource/cnsoft/verify_vector.fea"; //查询集
+const string RESULT_FILE_NAME = "F:/666/mysource/cnsoft/result.csv"; //查询集
+const string INDEX_FILE_NEME = "F:/666/mysource/cnsoft/stable.csv";
 const int HASH_BUCKET_NUM = 1000000;
 vector<int32_t> hashindex_stable[1000000];
 
@@ -24,15 +25,19 @@ int countHash(float *a, int *b, float *p)
 	{
 		count = count + (*(a + i))*(*(p + i));
 	}
-	int temp = (int)(count) + *b;
-	return temp%R;
+	//return count;
+	//int temp = (int)(count) + *b;
+	//return temp%R;
+	return (int)((count+62.2988)/90*1000);
 }
-void get_Hash_val(float *a, int *b)
+void get_Hash_val(int seed,float *a, int *b)
 {
-	srand(time(NULL));
+	//srand(time(NULL));
+	std::default_random_engine generator(seed);
+	std::normal_distribution<float> distribution(0.0,1.0);
 	for (int i=0; i < N; i++)
 	{
-		*(a + i) = (rand() % 100)*0.01;
+		*(a + i) = distribution(generator);
 	}
 	*b = 0;//rand() % R;
 }
@@ -44,8 +49,8 @@ void processData_stable()
 	file->open(DATA_FILE_NAME, ios::binary);
 	ofstream ofile;
 	ofile.open(INDEX_FILE_NEME);
-	if (file->is_open() && ofile.is_open());
-	else { cout << "data file out!"; return; }
+	//if (file->is_open()==false || ofile.is_open()==false);
+	//else { cout << "data file out!"; return; }
 	
 
 	Point p;
@@ -54,10 +59,11 @@ void processData_stable()
 	int hour = ltm->tm_hour;
 	int min = ltm->tm_min;
 	int sec = ltm->tm_sec;*/
+	srand(100);
 	float a[NUM][N]; int b[NUM];
 	for (int i = 0; i < NUM; i++)
 	{
-		get_Hash_val(a[i], &b[i]);
+		get_Hash_val(rand(),a[i], &b[i]);
 	}
 	while (true)
 	{
@@ -70,7 +76,7 @@ void processData_stable()
 		for (int i = 0; i < NUM; i++)
 		{
 			int temp=countHash(a[i], &b[i], p.value);
-			indexid = indexid + temp*pow(10, i);
+			indexid = indexid + temp*pow(1000, i);
 		}
 		hashindex_stable[indexid].push_back(p.id);
 		cout << p.id << endl;
@@ -122,7 +128,6 @@ void queryData_stable()
 	{
 		cout << "bucket file fail!" << endl; return;
 	}
-	string linestr;
 
 	ofstream result;
 	result.open(RESULT_FILE_NAME);
@@ -178,7 +183,7 @@ void queryData_stable()
 		for (int i = 0; i < NUM; i++)
 		{
 			int temp = countHash(a[i], &b[i], p.value);
-			indexid = indexid + temp*pow(10, i);
+			indexid = indexid + temp*pow(1000, i);
 		}
 		cout << p.id << endl;
 		
@@ -189,9 +194,9 @@ void queryData_stable()
 				queryarray.push_back(hashindex_stable[indexid][j]);
 			}
 	
-		int ret = Buckets::findMIn(&p, &ofile, queryarray);
+		int ret = Buckets::findMIn(&p, &data_file, queryarray);
 		result << ret << endl;
-		float tmp = Buckets::distance(&ofile, ret, p);
+		float tmp = Buckets::distance(&data_file, ret, p);
 		cout << "find id:" << ret << " distance:" << tmp << endl;
 		for (int i = 0; i<queryarray.size(); i++)
 		{
@@ -201,7 +206,7 @@ void queryData_stable()
 			}
 
 		}
-		tmp = Buckets::distance(&ofile, p.id, p);
+		tmp = Buckets::distance(&data_file, p.id, p);
 		cout << "actual id:" << p.id << " distance:" << tmp << endl;
 		//return;
 
@@ -211,6 +216,35 @@ void queryData_stable()
 
 int main()
 {
-	processData_stable();
+	//processData_stable();
+
+	ifstream *file = new ifstream();
+	//fstream ofile;
+	file->open(DATA_FILE_NAME, ios::binary);
+	srand(100);
+	float a[N];int b;
+	get_Hash_val(rand(),a, &b);
+	float tmp;
+	Point p;
+	int i = 0;
+	cout.precision(10);
+	float max=0;
+	float min=300;
+	while (true) {
+		if (file->peek() == EOF)
+		{
+			file->close(); break;
+		}
+		Buckets::read_point(file, &p);//读点
+		tmp = countHash(a, &b, p.value);
+		if(tmp<min)
+			min=tmp;
+		if(tmp>max)
+			max=tmp;
+	}
+	cout<<"max:"<<max<<endl;
+	cout<<"min:"<<min<<endl;
+	cout<<"max-min:"<<max-min<<endl; 
+	
 	return 0;
 }
